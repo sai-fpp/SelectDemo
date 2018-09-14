@@ -21,10 +21,6 @@ void SocketEventDispatcher::Run()
 	{
 		return;
 	}
-	if (!FdSetUpdate::Get().Init())
-	{
-		return;
-	}
 	while (true)
 	{
 		fd_set readSet = m_ReadSet;
@@ -48,32 +44,18 @@ void SocketEventDispatcher::Run()
 			if (sockConn != INVALID_SOCKET)
 			{
 				string ip = inet_ntoa(addrClient.sin_addr);
-				if (ip == "127.0.0.1")
+				p = new ClientSession(sockConn, ip);
+				if (p)
 				{
-					m_InternalClientSocket = sockConn;
-					SetFdSet(m_InternalClientSocket, SOCKET_READABLE);
-				}
-				else
-				{
-					p = new ClientSession(sockConn, ip);
-					if (p)
-					{
-						printf("new connect:%d\n", p->m_SocketNum);
-						m_mapHandlers[p->m_SocketNum] = p;
-						SetFdSet(p->m_SocketNum, SOCKET_READABLE);
-					}
+					printf("new connect:%d\n", p->m_SocketNum);
+					m_mapHandlers[p->m_SocketNum] = p;
+					SetFdSet(p->m_SocketNum, SOCKET_READABLE);
 				}
 			}
 			else
 			{
 				printf("accept fail\n");
 			}
-		}
-		if (FD_ISSET(m_InternalClientSocket, &readSet))
-		{
-			int data[2] = { 0 };
-			int nRecvLen = recv(m_InternalClientSocket, (char*)data, sizeof(data), 0);
-			SetFdSet(data[0], data[1]);
 		}
 		for (map<SOCKET, ClientSession*>::iterator it = m_mapHandlers.begin();it != m_mapHandlers.end();)
 		{

@@ -30,7 +30,7 @@
     <ClInclude Include="SocketEventDispatcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FdSetUpdate.h">
+    <ClInclude Include="SelectMonitorSetter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -50,7 +50,7 @@
     <ClCompile Include="SocketEventDispatcher.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FdSetUpdate.cpp">
+    <ClCompile Include="SelectMonitorSetter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
