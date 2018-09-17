@@ -7,6 +7,7 @@ using namespace std;
 
 SocketEventDispatcher::SocketEventDispatcher()
 {
+
 }
 
 
@@ -151,6 +152,12 @@ bool SocketEventDispatcher::SetFdSet(SOCKET nSocketNum,int nConditionSet)
 }
 
 
+void SocketEventDispatcher::Close()
+{
+	shutdown(m_ListenSocketNum, SD_BOTH);
+	closesocket(m_ListenSocketNum);
+}
+
 bool SocketEventDispatcher::StartListen(int nPort)
 {
 	sockaddr_in localAddr;
@@ -165,6 +172,7 @@ bool SocketEventDispatcher::StartListen(int nPort)
 	int ret = bind(m_ListenSocketNum, (struct sockaddr*)&localAddr, sizeof(localAddr));
 	if (ret != 0)
 	{
+		printf("bind fail\n");
 		closesocket(m_ListenSocketNum);
 		m_ListenSocketNum = INVALID_SOCKET;
 		return false;

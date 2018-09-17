@@ -2,7 +2,7 @@
 #include "ClientSession.h"
 #include <stdio.h>
 #include "PubDef.h"
-#include "SelectMonitorSetter.h"
+#include "SocketEventDispatcher.h"
 
 using namespace std;
 
@@ -32,7 +32,7 @@ int ClientSession::HandleRead()
 		strcpy_s(data.data, "result 1");
 		data.len = strlen(data.data);
 		m_SendDataSet.push(data);
-		SelectMonitorSetter::Get().SetSocket(m_SocketNum, SOCKET_READABLE | SOCKET_WRITABLE);
+		eventLoop.SetFdSet(m_SocketNum, SOCKET_READABLE | SOCKET_WRITABLE);
 	}
 	return m_nRecvLen;
 }
@@ -46,7 +46,7 @@ void ClientSession::HandleWrite()
 		int n = send(m_SocketNum, data.data, data.len, 0);
 		printf("send %d\n", n);
 	}
-	SelectMonitorSetter::Get().SetSocket(m_SocketNum, SOCKET_READABLE);
+	eventLoop.SetFdSet(m_SocketNum, SOCKET_READABLE);
 }
 
 void ClientSession::HandleException()

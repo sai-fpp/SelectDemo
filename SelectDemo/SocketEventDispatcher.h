@@ -10,6 +10,7 @@ public:
 	~SocketEventDispatcher();
 	void Run();
 	bool SetFdSet(SOCKET nSocketNum, int nConditionSet);
+	void Close();
 private:
 	bool StartListen();
 	int Select(fd_set& readSet, fd_set& writeSet, fd_set& exceptionSet, long nWaitMS);
@@ -23,3 +24,4 @@ private:
 	fd_set m_ExceptionSet;
 };
 
+extern SocketEventDispatcher eventLoop;
