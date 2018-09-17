@@ -8,7 +8,8 @@ class SocketEventDispatcher
 public:
 	SocketEventDispatcher();
 	~SocketEventDispatcher();
-	void Run();
+	bool Init();
+	int RunOneStep(long nWaitMS);
 	bool SetFdSet(SOCKET nSocketNum, int nConditionSet);
 	void Close();
 private:

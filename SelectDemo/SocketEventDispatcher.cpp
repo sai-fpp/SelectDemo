@@ -15,76 +15,74 @@ SocketEventDispatcher::~SocketEventDispatcher()
 {
 }
 
-
-void SocketEventDispatcher::Run()
+bool SocketEventDispatcher::Init()
 {
-	if (!StartListen())
-	{
-		return;
-	}
-	while (true)
-	{
-		fd_set readSet = m_ReadSet;
-		fd_set writeSet = m_WriteSet;
-		fd_set exceptionSet = m_ExceptionSet;
-		int nResult = Select(readSet, writeSet, exceptionSet, 0);
-		if (nResult == 0)
-		{
-			continue;
-		}
-		if (nResult == -2)
-		{
-			terminate();
-		}
-		if (FD_ISSET(m_ListenSocketNum, &readSet))
-		{
-			ClientSession* p = nullptr;
-			SOCKADDR_IN addrClient;
-			int addrLen = sizeof(SOCKADDR);
-			SOCKET sockConn = accept(m_ListenSocketNum, (SOCKADDR*)&addrClient, &addrLen);
-			if (sockConn != INVALID_SOCKET)
-			{
-				string ip = inet_ntoa(addrClient.sin_addr);
-				p = new ClientSession(sockConn, ip);
-				if (p)
-				{
-					printf("new connect:%d\n", p->m_SocketNum);
-					m_mapHandlers[p->m_SocketNum] = p;
-					SetFdSet(p->m_SocketNum, SOCKET_READABLE);
-				}
-			}
-			else
-			{
-				printf("accept fail\n");
-			}
-		}
-		for (map<SOCKET, ClientSession*>::iterator it = m_mapHandlers.begin();it != m_mapHandlers.end();)
-		{
-			if (FD_ISSET(it->first, &readSet))
-			{
-				int nSize = it->second->HandleRead();
-				if (nSize == 0)
-				{
-					SetFdSet(it->first,0);
-					delete it->second;
-					printf("client close connect:%d\n", it->first);
-					m_mapHandlers.erase(it++);
-					continue;
-				}
-			}
-			if (FD_ISSET(it->first, &writeSet))
-			{
-				it->second->HandleWrite();
-			}
-			if (FD_ISSET(it->first, &exceptionSet))
-			{
-				it->second->HandleException();
-			}
-			it++;
-			continue;
-		}
-	}
+	return StartListen();
+}
 
+int SocketEventDispatcher::RunOneStep(long nWaitMS)
+{
+
+	fd_set readSet = m_ReadSet;
+	fd_set writeSet = m_WriteSet;
+	fd_set exceptionSet = m_ExceptionSet;
+	int nResult = Select(readSet, writeSet, exceptionSet, nWaitMS);
+	if (nResult == 0)
+	{
+		return 0;
+	}
+	if (nResult == -2)
+	{
+		return -1;
+	}
+	if (FD_ISSET(m_ListenSocketNum, &readSet))
+	{
+		ClientSession* p = nullptr;
+		SOCKADDR_IN addrClient;
+		int addrLen = sizeof(SOCKADDR);
+		SOCKET sockConn = accept(m_ListenSocketNum, (SOCKADDR*)&addrClient, &addrLen);
+		if (sockConn != INVALID_SOCKET)
+		{
+			string ip = inet_ntoa(addrClient.sin_addr);
+			p = new ClientSession(sockConn, ip);
+			if (p)
+			{
+				printf("new connect:%d\n", p->m_SocketNum);
+				m_mapHandlers[p->m_SocketNum] = p;
+				SetFdSet(p->m_SocketNum, SOCKET_READABLE);
+			}
+		}
+		else
+		{
+			printf("accept fail\n");
+		}
+	}
+	for (map<SOCKET, ClientSession*>::iterator it = m_mapHandlers.begin(); it != m_mapHandlers.end();)
+	{
+		if (FD_ISSET(it->first, &readSet))
+		{
+			int nSize = it->second->HandleRead();
+			if (nSize == 0)
+			{
+				SetFdSet(it->first, 0);
+				delete it->second;
+				printf("client close connect:%d\n", it->first);
+				m_mapHandlers.erase(it++);
+				continue;
+			}
+		}
+		if (FD_ISSET(it->first, &writeSet))
+		{
+			it->second->HandleWrite();
+		}
+		if (FD_ISSET(it->first, &exceptionSet))
+		{
+			it->second->HandleException();
+		}
+		it++;
+		continue;
+	}
+	return 1;
 }
 
 bool SocketEventDispatcher::StartListen()
@@ -118,8 +116,7 @@ int SocketEventDispatcher::Select(fd_set& readSet, fd_set& writeSet, fd_set& exc
 		{
 			return 0;
 		}
-
-		return -2;
+		return -1;
 	}
 	else if(nResult == 0)
 	{
